@@ -8,6 +8,10 @@ A privacy-preserving vaccine record management system built on FHEVM (Fully Homo
 
 This project demonstrates a complete FHEVM implementation for managing sensitive healthcare data with cryptographic guarantees. It showcases how Fully Homomorphic Encryption enables computation on encrypted data while maintaining patient privacy.
 
+Live Demo : https://vaccine-record-privacy-system.vercel.app/
+
+Video : VaccineRecordPrivacy.mp4 https://streamable.com/tw29dt
+
 ### Key Features
 
 - 🔒 **End-to-End Encryption**: All sensitive patient data encrypted with FHE
