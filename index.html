@@ -1,0 +1,1204 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaccine Record Privacy System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/fhevmjs@0.4.2/bundle/bundle.web.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .wallet-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .status {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .record-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .record-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .record-id {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .record-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .record-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .record-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .record-details {
+            margin-bottom: 15px;
+        }
+
+        .record-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .record-detail strong {
+            color: #555;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .records-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .permission-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .permission-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .permission-detail {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .contract-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .contract-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Vaccine Record Privacy System</h1>
+            <p>Secure and Private Vaccination Record Management on Blockchain</p>
+        </div>
+
+        <div class="wallet-section">
+            <div class="contract-info">
+                <h3>📋 Contract Information</h3>
+                <p><strong>Network:</strong> Sepolia Test Network</p>
+                <p><strong>Contract:</strong> <span id="contractAddress">Not deployed</span></p>
+                <p><strong>Total Records:</strong> <span id="totalRecords">0</span></p>
+            </div>
+
+            <div>
+                <button id="connectWallet" class="btn">
+                    <span id="walletStatus">Connect Wallet</span>
+                </button>
+                <button id="deployContract" class="btn secondary" disabled>Deploy Contract</button>
+                <div id="walletInfo" class="status info hidden">
+                    <strong>Connected:</strong> <span id="userAddress"></span><br>
+                    <strong>Balance:</strong> <span id="userBalance"></span> ETH
+                </div>
+            </div>
+        </div>
+
+        <div class="wallet-section">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('record')">📝 Record Vaccination</button>
+                <button class="tab" onclick="showTab('view')">👁️ View Records</button>
+                <button class="tab" onclick="showTab('access')">🔐 Manage Access</button>
+                <button class="tab" onclick="showTab('doctor')">👨‍⚕️ Doctor Management</button>
+                <button class="tab" onclick="showTab('stats')">📊 Statistics</button>
+            </div>
+
+            <!-- Record Vaccination Tab -->
+            <div id="record" class="tab-content active">
+                <h3>Record New Vaccination</h3>
+                <div class="two-column">
+                    <div>
+                        <div class="form-group">
+                            <label>Patient Address:</label>
+                            <input type="text" id="patientAddress" placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label>Person ID:</label>
+                            <input type="number" id="personId" placeholder="Unique person identifier">
+                        </div>
+                        <div class="form-group">
+                            <label>Vaccine Type:</label>
+                            <select id="vaccineType">
+                                <option value="">Select vaccine type</option>
+                                <option value="1">COVID-19</option>
+                                <option value="2">Influenza</option>
+                                <option value="3">Hepatitis A</option>
+                                <option value="4">Hepatitis B</option>
+                                <option value="5">Tetanus</option>
+                                <option value="6">Measles</option>
+                                <option value="7">Mumps</option>
+                                <option value="8">Rubella</option>
+                                <option value="9">Polio</option>
+                                <option value="10">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Vaccination Date:</label>
+                            <input type="date" id="vaccineDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Dose Number:</label>
+                            <select id="doseNumber">
+                                <option value="">Select dose</option>
+                                <option value="1">1st Dose</option>
+                                <option value="2">2nd Dose</option>
+                                <option value="3">3rd Dose</option>
+                                <option value="4">4th Dose</option>
+                                <option value="5">5th Dose</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Batch Number:</label>
+                            <input type="number" id="batchNumber" placeholder="Vaccine batch number">
+                        </div>
+                    </div>
+                </div>
+                <button id="recordVaccination" class="btn" onclick="recordVaccination()">Record Vaccination</button>
+                <div id="recordStatus"></div>
+            </div>
+
+            <!-- View Records Tab -->
+            <div id="view" class="tab-content">
+                <h3>View Vaccination Records</h3>
+                <div class="form-group">
+                    <label>User Address (leave empty for connected wallet):</label>
+                    <input type="text" id="viewUserAddress" placeholder="0x... or leave empty">
+                </div>
+                <button class="btn" onclick="loadUserRecords()">Load Records</button>
+                <div id="recordsList"></div>
+            </div>
+
+            <!-- Access Management Tab -->
+            <div id="access" class="tab-content">
+                <h3>Manage Record Access</h3>
+                <div class="two-column">
+                    <div>
+                        <h4>Grant Access</h4>
+                        <div class="form-group">
+                            <label>Record ID:</label>
+                            <input type="number" id="grantRecordId" placeholder="Record ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Accessor Address:</label>
+                            <input type="text" id="accessorAddress" placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label>Permissions:</label>
+                            <div>
+                                <label><input type="checkbox" id="canView"> Can View</label><br>
+                                <label><input type="checkbox" id="canUpdate"> Can Update</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (days):</label>
+                            <input type="number" id="accessDuration" placeholder="30" value="30">
+                        </div>
+                        <button class="btn" onclick="grantAccess()">Grant Access</button>
+                    </div>
+                    <div>
+                        <h4>Revoke Access</h4>
+                        <div class="form-group">
+                            <label>Record ID:</label>
+                            <input type="number" id="revokeRecordId" placeholder="Record ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Accessor Address:</label>
+                            <input type="text" id="revokeAccessorAddress" placeholder="0x...">
+                        </div>
+                        <button class="btn danger" onclick="revokeAccess()">Revoke Access</button>
+                    </div>
+                </div>
+                <div id="accessStatus"></div>
+
+                <h4>Check Access Permissions</h4>
+                <div class="form-group">
+                    <label>User Address:</label>
+                    <input type="text" id="checkUserAddress" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label>Record ID:</label>
+                    <input type="number" id="checkRecordId" placeholder="Record ID">
+                </div>
+                <button class="btn secondary" onclick="checkAccessPermission()">Check Permissions</button>
+                <div id="permissionResult"></div>
+            </div>
+
+            <!-- Doctor Management Tab -->
+            <div id="doctor" class="tab-content">
+                <h3>Doctor Authorization Management</h3>
+                <div class="two-column">
+                    <div>
+                        <h4>Authorize Doctor</h4>
+                        <div class="form-group">
+                            <label>Doctor Address:</label>
+                            <input type="text" id="authorizeDoctorAddress" placeholder="0x...">
+                        </div>
+                        <button class="btn success" onclick="authorizeDoctor()">Authorize Doctor</button>
+                        <button class="btn secondary" onclick="document.getElementById('authorizeDoctorAddress').value = userAddress">Use My Address</button>
+                    </div>
+                    <div>
+                        <h4>Revoke Doctor</h4>
+                        <div class="form-group">
+                            <label>Doctor Address:</label>
+                            <input type="text" id="revokeDoctorAddress" placeholder="0x...">
+                        </div>
+                        <button class="btn danger" onclick="revokeDoctor()">Revoke Doctor</button>
+                    </div>
+                </div>
+                <div id="doctorStatus"></div>
+
+                <h4>Check Doctor Authorization</h4>
+                <div class="form-group">
+                    <label>Doctor Address:</label>
+                    <input type="text" id="checkDoctorAddress" placeholder="0x...">
+                </div>
+                <button class="btn secondary" onclick="checkDoctorAuthorization()">Check Authorization</button>
+                <div id="doctorCheckResult"></div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="stats" class="tab-content">
+                <h3>System Statistics</h3>
+                <button class="btn" onclick="loadStatistics()">Refresh Statistics</button>
+                <div id="statisticsDisplay"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contract ABI
+        const CONTRACT_ABI = [
+            "function healthAuthority() view returns (address)",
+            "function totalRecords() view returns (uint256)",
+            "function authorizedDoctors(address) view returns (bool)",
+            "function vaccineRecords(uint256) view returns (tuple(uint256 encryptedPersonId, uint256 encryptedVaccineType, uint256 encryptedVaccineDate, uint256 encryptedDoseNumber, uint256 encryptedBatchNumber, bool isActive, uint256 timestamp, address authorizedDoctor))",
+            "function accessPermissions(address, uint256) view returns (tuple(bool canView, bool canUpdate, uint256 expiryTime, bool isActive))",
+            "function userRecords(address, uint256) view returns (uint256)",
+            "function authorizeDoctor(address doctor)",
+            "function revokeDoctor(address doctor)",
+            "function recordVaccination(address patient, uint32 personId, uint8 vaccineType, uint32 vaccineDate, uint8 doseNumber, uint32 batchNumber)",
+            "function grantAccess(address accessor, uint256 recordId, bool canView, bool canUpdate, uint256 durationInDays)",
+            "function revokeAccess(address accessor, uint256 recordId)",
+            "function updateVaccineRecord(uint256 recordId, uint8 newVaccineType, uint32 newVaccineDate, uint8 newDoseNumber, uint32 newBatchNumber)",
+            "function hasAccessPermission(address user, uint256 recordId) view returns (bool)",
+            "function hasOwnershipOfRecord(address user, uint256 recordId) view returns (bool)",
+            "function getUserRecords(address user) view returns (uint256[])",
+            "function getRecordInfo(uint256 recordId) view returns (bool isActive, uint256 timestamp, address authorizedDoctor)",
+            "function getAccessPermission(address user, uint256 recordId) view returns (bool canView, bool canUpdate, uint256 expiryTime, bool isActive)",
+            "function verifyVaccineRecord(uint256 recordId, uint32 expectedPersonId) returns (bool)",
+            "function deactivateRecord(uint256 recordId)",
+            "function getStatistics() view returns (uint256 totalActiveRecords, uint256 totalAuthorizedDoctors)",
+            "event VaccineRecorded(uint256 indexed recordId, address indexed patient, address indexed doctor)",
+            "event AccessGranted(address indexed patient, address indexed accessor, uint256 recordId)",
+            "event AccessRevoked(address indexed patient, address indexed accessor, uint256 recordId)",
+            "event DoctorAuthorized(address indexed doctor)",
+            "event DoctorRevoked(address indexed doctor)",
+            "event RecordUpdated(uint256 indexed recordId, address indexed updater)"
+        ];
+
+        const CONTRACT_BYTECODE = "0x608060405234801561001057600080fd5b50600080546001600160a01b0319163317905560006001556128c7806100366000396000f3fe608060405234801561001057600080fd5b50600436106101735760003560e01c80637b4baa4f116100de578063a9059cbb11610097578063d1f7b8e511610071578063d1f7b8e514610337578063e2c7e1041461034a578063f4f3b2001461035d578063f8c8765e1461037057600080fd5b8063a9059cbb146102fe578063c87b56dd14610311578063d0a7be831461032457600080fd5b80637b4baa4f146102985780638da5cb5b146102ab5780639010d07c146102be57806391b7f5ed146102d157806395d89b41146102e4578063a0712d68146102ec57600080fd5b80632f745c591161013057806342842e0e1161010a57806342842e0e1461025257806354ba1b021461026557806370a082311461027857806370cf0e9a1461028b57600080fd5b80632f745c591461021957806340c10f191461022c5780634f558e791461023f57600080fd5b806301ffc9a71461017857806306fdde03146101a0578063081812fc146101b5578063095ea7b3146101e057806318160ddd146101f557806323b872dd14610206575b600080fd5b61018b6101863660046119c8565b610383565b60405190151581526020015b60405180910390f35b6101a86103ae565b6040516101979190611a3d565b6101c86101c3366004611a50565b610440565b6040516001600160a01b039091168152602001610197565b6101f36101ee366004611a85565b6104da565b005b6002545b604051908152602001610197565b6101f3610214366004611aaf565b6105f0565b6101f9610227366004611a85565b610621565b6101f361023a366004611a85565b6106b7565b61018b61024d366004611a50565b610745565b6101f3610260366004611aaf565b610764565b6101f3610273366004611aeb565b61077f565b6101f9610286366004611b16565b6107b3565b6101f3610299366004611b16565b610839565b6101f36102a6366004611a50565b61088d565b6000546001600160a01b03166101c8565b6101c86102cc366004611b31565b6108d2565b6101f36102df366004611a50565b6108f2565b6101a8610937565b6101f36102fa366004611a50565b610946565b61018b61030c366004611a85565b610975565b6101a861031f366004611a50565b610a45565b6101f3610332366004611b16565b610b0f565b6101f3610345366004611a50565b610b63565b6101f3610358366004611b31565b610ba8565b61018b61036b366004611a85565b610c03565b6101f361037e366004611b16565b610c69565b60006001600160e01b0319821663780e9d6360e01b14806103a857506103a882610cbd565b92915050565b6060600380546103bd90611b53565b80601f01602080910402602001604051908101604052809291908181526020018280546103e990611b53565b80156104365780601f1061040b57610100808354040283529160200191610436565b820191906000526020600020905b81548152906001019060200180831161041957829003601f168201915b5050505050905090565b6000818152600560205260408120546001600160a01b03166104be5760405162461bcd60e51b815260206004820152602c60248201527f4552433732313a20617070726f76656420717565727920666f72206e6f6e657860448201526b34b9ba32b73a103a37b5b2b760a11b60648201526084015b60405180910390fd5b506000908152600760205260409020546001600160a01b031690565b60006104e582610d0d565b9050806001600160a01b0316836001600160a01b031614156105535760405162461bcd60e51b815260206004820152602160248201527f4552433732313a20617070726f76616c20746f2063757272656e74206f776e656044820152603960f91b60648201526084016104b5565b336001600160a01b038216148061056f575061056f8133610c03565b6105e15760405162461bcd60e51b815260206004820152603860248201527f4552433732313a20617070726f76652063616c6c6572206973206e6f74206f7760448201527f6e6572206e6f7220617070726f76656420666f7220616c6c000000000000000060648201526084016104b5565b6105eb8383610d84565b505050565b6105fa3382610df2565b6106165760405162461bcd60e51b81526004016104b590611b8d565b6105eb838383610ee9565b600061062c836107b3565b821061068e5760405162461bcd60e51b815260206004820152602b60248201527f455243373231456e756d657261626c653a206f776e657220696e646578206f7560448201526a74206f6620626f756e647360a81b60648201526084016104b5565b506001600160a01b03919091166000908152600860209081526040808320938352929052205490565b6000546001600160a01b031633146106e15760405162461bcd60e51b81526004016104b590611bde565b600254811061073c5760405162461bcd60e51b815260206004820152602160248201527f546f6b656e20494420616c726561647920657869737473206f72206973207a656044820152603960f91b60648201526084016104b5565b61073b8282611094565b5050565b6000818152600560205260408120546001600160a01b031615156103a8565b6105eb83838360405180602001604052806000815250610ba8565b6000546001600160a01b031633146107a95760405162461bcd60e51b81526004016104b590611bde565b61073b82826110ae565b60006001600160a01b03821661081e5760405162461bcd60e51b815260206004820152602a60248201527f4552433732313a2062616c616e636520717565727920666f72207468652076656044820152693937b532b1ba103a37b5b2b760b11b60648201526084016104b5565b506001600160a01b031660009081526006602052604090205490565b6000546001600160a01b031633146108635760405162461bcd60e51b81526004016104b590611bde565b600080546001600160a01b0319166001600160a01b0392909216919091179055565b6000546001600160a01b031633146108b75760405162461bcd60e51b81526004016104b590611bde565b6000818152600560205260409020546105eb906001600160a01b0316826110ae565b6000828152600a602052604081206108ea908361118c565b949350505050565b6000546001600160a01b0316331461091c5760405162461bcd60e51b81526004016104b590611bde565b6002548111156109315761093181600254611198565b50600255565b6060600480546103bd90611b53565b6000546001600160a01b031633146109705760405162461bcd60e51b81526004016104b590611bde565b600155565b6000806109818361111e565b9050806001600160a01b0316846001600160a01b031614806109c857506001600160a01b0380821660009081526009602090815260408083209388168352929052205460ff165b806108ea5750836001600160a01b03166109e184610440565b6001600160a01b031614949350505050565b606060006109ff836111bb565b905060008167ffffffffffffffff811115610a1c57610a1c611c13565b604051908082528060200260200182016040528015610a45578160200160208202803683370190505b50905060005b82811015610a8b57610a5d8582610621565b828281518110610a6f57610a6f611c29565b602090810291909101015280610a8481611c55565b915050610a4b565b509392505050565b6060610aa5610aa083611225565b611323565b6040516020016105eb9190611c70565b606081610ad85750506040805180820190915260018152600360fc1b602082015290565b8160005b8115610b025780610aec81611c55565b9150610afb9050600a83611caa565b9150610adc565b60008167ffffffffffffffff811115610b1d57610b1d611c13565b6040519080825280601f01601f191660200182016040528015610b47576020820181803683370190505b5090505b84156108ea57610b5c600183611cbe565b9150610b69600a86611cd5565b610b74906030611ce9565b60f81b818381518110610b8957610b89611c29565b60200101906001600160f81b031916908160001a905350610bab600a86611caa565b9450610b4b565b610bb23383610df2565b610bce5760405162461bcd60e51b81526004016104b590611b8d565b610bda84848484611457565b50505050565b6000818152600a6020526040812061073b908361148a565b6001600160a01b03918216600090815260096020908152604080832093909416825291909152205460ff1690565b6000546001600160a01b03163314610c535760405162461bcd60e51b81526004016104b590611bde565b600180546001600160a01b0319166001600160a01b0392909216919091179055565b6000546001600160a01b03163314610c935760405162461bcd60e51b81526004016104b590611bde565b6001600160a01b038116610cb25760405162461bcd60e51b81526004016104b590611d01565b610931816001600160a01b0316610d0d565b60006001600160e01b031982166380ac58cd60e01b1480610cee57506001600160e01b03198216635b5e139f60e01b145b806103a857506301ffc9a760e01b6001600160e01b03198316146103a8565b6000818152600560205260408120546001600160a01b0316806103a85760405162461bcd60e51b815260206004820152602960248201527f4552433732313a206f776e657220717565727920666f72206e6f6e657869737460448201526832b73a103a37b5b2b760b91b60648201526084016104b5565b600081815260076020526040902080546001600160a01b0319166001600160a01b0384169081179091558190610db982610d0d565b6001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92560405160405180910390a45050565b6000818152600560205260408120546001600160a01b0316610e6b5760405162461bcd60e51b815260206004820152602c60248201527f4552433732313a206f70657261746f7220717565727920666f72206e6f6e657860448201526b34b9ba32b73a103a37b5b2b760a11b60648201526084016104b5565b6000610e7683610d0d565b9050806001600160a01b0316846001600160a01b03161480610eb15750836001600160a01b0316610ea684610440565b6001600160a01b0316145b806108ea57506001600160a01b0380821660009081526009602090815260408083209388168352929052205460ff16949350505050565b826001600160a01b0316610efc82610d0d565b6001600160a01b031614610f645760405162461bcd60e51b815260206004820152602960248201527f4552433732313a207472616e73666572206f6620746f6b656e2074686174206960448201526839903737ba1037bbb760b91b60648201526084016104b5565b6001600160a01b038216610fc65760405162461bcd60e51b8152602060048201526024808201527f4552433732313a207472616e7366657220746f20746865207a65726f206164646044820152637265737360e01b60648201526084016104b5565b610fd1838383611496565b610fdc600082610d84565b6001600160a01b0383166000908152600660205260408120805460019290611005908490611cbe565b90915550506001600160a01b0382166000908152600660205260408120805460019290611033908490611ce9565b909155505060008181526005602052604080822080546001600160a01b0319166001600160a01b0386811691821790925591518493918716917fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef91a4505050565b61073b8282604051806020016040528060008152506114a1565b60006110b98361111e565b9050806001600160a01b0316846001600160a01b031614156111235760405162461bcd60e51b815260206004820152602160248201527f4552433732313a20617070726f76616c20746f2063757272656e74206f776e656044820152603960f91b60648201526084016104b5565b6001600160a01b038416600090815260096020908152604080832033845290915290205460ff16806111625750600154336001600160a01b03909116145b6111b35760405162461bcd60e51b8152602060048201526022602482015260008051602061287283398151915260448201526132b960f11b60648201526084016104b5565b610bda84845b6000818152600560205260408120546001600160a01b031680156103a8576040516370a0823160e01b81526001600160a01b038216600482015230602482015260009073__$fb506215b4e00c80e12e4bc53d2c3c2b75$__906370a08231906044015b60206040518083038186803b15801561119757600080fd5b505af41580156111ab573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906108ea9190611d47565b600080518060200160405280600081525090565b6000610a8b61120d8361121f565b60405180606001604052806025815260200161284d60259139906114d4565b6000818152600560205260408120546001600160a01b0316801561124357506000195b9392505050565b6000818152600560205260408120546001600160a01b031681158015906112705750806001145b61124357506002919050565b600081815260056020526040902054600160a01b900460ff16156103a857600081815260056020526040902054600160a01b900460ff1680156112e357506000828152600560209081526040918290208251606081019093526003835262646f6760e81b919092015290600081815260056020908152604091829020905160038152600060208201526040805160ff8516928101929092520151906113dc9061150c565b8060200190518101906112ef9190611d60565b601c11156113155750600081815260056020526040902054600160a01b900460ff1690565b600081815260056020908152604091829020905163e8c4be3160e01b8152909192500180831161134e576001915050919050565b506002919050565b600081815260056020526040812054600160a01b900460ff16806113805750600081815260056020526040902054600160a01b900460ff165b1561138d575050600190565b600082815260056020908152604091829020905160038152600060208201526040805160ff8516928101929092520151906113c79061150c565b8060200190518101906113da9190611d60565b601c1115611405575050600081815260056020526040902054600160a01b900460ff1690565b50600092915050565b606061141e600183611cbe565b67ffffffffffffffff81111561143657611436611c13565b6040519080825280601f01601f191660200182016040528015611460576020820181803683370190505b509050600360fc1b8160008151811061147b5761147b611c29565b60200101906001600160f81b031916908160001a90535092915050565b611495848484610ee9565b610bda8484848461157f565b60006108ea836001600160a01b03841661168c565b60006108ea836001600160a01b0384166116db565b6114de82826117c5565b61073b600082815260056020908152604080832080546001600160a01b031916905551909161151091905084906118e1565b61151a8282611198565b5050565b6060600061152a6118f6565b9050600081511161154a5760405180602001604052806000815250611575565b806115548461190e565b604051602001611565929190611d84565b6040516020818303038152906040525b9392505050565b60006001600160a01b0384163b1561168157604051630a85bd0160e11b81526001600160a01b0385169063150b7a02906115c3903390899088908890600401611db3565b602060405180830381600087803b1580156115dd57600080fd5b505af192505050801561160d575060408051601f3d908101601f1916820190925261160a91810190611df0565b60015b611667573d80801561163b576040519150601f19603f3d011682016040523d82523d6000602084013e611640565b606091505b50805161165f5760405162461bcd60e51b81526004016104b590611e0d565b805181602001fd5b6001600160e01b031916630a85bd0160e11b1490506108ea565b506001949350505050565b600081815260018301602052604081205480156117bb5760006116b0600183611cbe565b85549091506000906116c490600190611cbe565b90508181146116d657611676868261199e565b6116d6878261199e565b50505050565b6000818152600183016020526040812054801561177b5760006117b0600183611cbe565b855490915060009061172490600190611cbe565b9050818114611789576000866000018281548110611744576117446129b5565b906000526020600020015490508087600001848154811061176757611767611c29565b6000918252602080832090910192909255918252600188019052604090208390555b855486908061179a5761179a611e5f565b6001900381819060005260206000200160009055905585600101600086815260200190815260200160002060009055600193505050506103a8565b60009392505050565b6117ce81611a0b565b6000818152600a6020526040902080546117e790611e75565b1590506109315760008181526005602052604080822054905163a9059cbb60e01b815233600482015260001960248201526001600160a01b039091169063a9059cbb90604401602060405180830381600087803b15801561184757600080fd5b505af115801561185b573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061187f9190611e8b565b50600081815260056020526040808220805460ff60a01b1916600160a01b179055518291600080516020612872833981519152908390a250565b6060600b80546103bd90611b53565b606060006118d1600185611cbe565b90506118dc81611a0b565b611575600182611cbe565b6105eb828260405180602001604052806000815250611aa5565b6060600c80546103bd90611b53565b6060816119325750506040805180820190915260018152600360fc1b602082015290565b8160005b811561195c578061194681611c55565b91506119559050600a83611caa565b9150611936565b60008167ffffffffffffffff81111561197757611977611c13565b6040519080825280601f01601f1916602001820160405280156119a1576020820181803683370190505b5090505b84156108ea576119b6600183611cbe565b91506119c3600a86611cd5565b6119ce906030611ce9565b60f81b8183815181106119e3576119e3611c29565b60200101906001600160f81b031916908160001a905350611a05600a86611caa565b94506119a5565b6000611a16826111bb565b9050611a24816000846114a1565b611a2f600083610d84565b6001600160a01b0381166000908152600660205260408120805460019290611a58908490611cbe565b909155505060008281526005602052604080822080546001600160a01b0319169055518391906001600160a01b038416907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef908390a45050565b611aaf8383611ad8565b611abc600084848461157f565b6105eb5760405162461bcd60e51b81526004016104b590611e0d565b6001600160a01b038216611b2e5760405162461bcd60e51b815260206004820181905260248201527f4552433732313a206d696e7420746f20746865207a65726f206164647265737360448201526064016104b5565b6000818152600560205260409020546001600160a01b031615611b935760405162461bcd60e51b815260206004820152601c60248201527f4552433732313a20746f6b656e20616c7265616479206d696e7465640000000060448201526064016104b5565b611b9f60008383611496565b6001600160a01b0382166000908152600660205260408120805460019290611bc8908490611ce9565b909155505060008181526005602052604080822080546001600160a01b0319166001600160a01b03861690811790915590518392907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef908290a45050565b634e487b7160e01b600052604160045260246000fd5b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b6000600019821415611c6957611c69611c3f565b5060010190565b60008251611c82818460208701611ea8565b9190910192915050565b634e487b7160e01b600052601260045260246000fd5b600082611cb957611cb9611c8c565b500490565b600082821015611cd057611cd0611c3f565b500390565b600082611ce457611ce4611c8c565b500690565b60008219821115611cfc57611cfc611c3f565b500190565b60208082526026908201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160408201526564647265737360d01b606082015260800190565b600060208284031215611d5957600080fd5b5051919050565b600060208284031215611d7257600080fd5b815180151581146105f757600080fd5b60008351611d96818460208801611ea8565b835190830190611daa818360208801611ea8565b01949350505050565b6001600160a01b0385811682528416602082015260408101839052608060608201819052600090611de690830184611f8d565b9695505050505050565b600060208284031215611e0257600080fd5b81516105f781611fe0565b60208082526032908201527f4552433732313a207472616e7366657220746f206e6f6e20455243373231526560408201527131b2b4bb32b91034b6b83632b6b2b73a32b960711b606082015260800190565b634e487b7160e01b600052603160045260246000fd5b600060208284031215611e8757600080fd5b5051919050565b600060208284031215611e9d57600080fd5b81516105f7816120c3565b60005b83811015611ec3578181015183820152602001611eab565b83811115610bda5750506000910152565b600081518084526020808501945080840160005b83811015611f0e5781516001600160a01b031687529582019590820190600101611ee9565b509495945050505050565b60008251611f2b818460208701611ea8565b9190910192915050565b600080821280156001600160ff1b0384900385131615611f5757611f57611c3f565b600160ff1b8390038412811615611f7057611f70611c3f565b50500190565b634e487b7160e01b600052602160045260246000fd5b60008151808452611fa5816020860160208601611ea8565b601f01601f19169290920160200192915050565b6001600160a01b03929092168252602082015260400190565b6001600160e01b03198116811461093157600080fd5b801515811461093157600080fdfe55524920717565727920666f72206e6f6e6578697374656e7420746f6b656e4552433732314f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572206e6f7220617070726f76656420666f7220616c6ca2646970667358221220c7a7f8a5a15e7a8a5a5c8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e64736f6c63430008090033";
+
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let contractAddress = "";
+        let userAddress = "";
+
+        // Network configuration for Sepolia testnet
+        const SEPOLIA_NETWORK = {
+            name: "Sepolia Test Network",
+            chainId: 11155111,
+            rpcUrl: "https://sepolia.infura.io/v3/"
+        };
+
+        // Initialize the application
+        window.addEventListener('load', async () => {
+            // Check if ethers.js loaded
+            if (typeof ethers === 'undefined') {
+                showStatus('error', 'Failed to load ethers.js library. Please refresh the page.');
+                return;
+            }
+
+            if (typeof window.ethereum !== 'undefined') {
+                console.log('MetaMask detected');
+                await setupEventListeners();
+            } else {
+                showStatus('error', 'Please install MetaMask to use this application');
+            }
+        });
+
+        function setupEventListeners() {
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('deployContract').addEventListener('click', deployContract);
+        }
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    throw new Error('MetaMask not detected');
+                }
+
+                // Request account access
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                // Initialize provider and signer
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                userAddress = accounts[0];
+
+                // Check if connected to correct network
+                const network = await provider.getNetwork();
+                if (network.chainId !== SEPOLIA_NETWORK.chainId) {
+                    await switchToSepoliaNetwork();
+                }
+
+                // Update UI
+                document.getElementById('walletStatus').textContent = 'Connected';
+                document.getElementById('userAddress').textContent = userAddress;
+                document.getElementById('deployContract').disabled = false;
+
+                // Get and display balance
+                const balance = await provider.getBalance(userAddress);
+                document.getElementById('userBalance').textContent = ethers.utils.formatEther(balance);
+                document.getElementById('walletInfo').classList.remove('hidden');
+
+                showStatus('success', 'Wallet connected successfully!');
+
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showStatus('error', `Failed to connect wallet: ${error.message}`);
+            }
+        }
+
+        async function switchToSepoliaNetwork() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0xaa36a7' }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    // Network doesn't exist, add it
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0xaa36a7',
+                            chainName: 'Sepolia Test Network',
+                            rpcUrls: ['https://sepolia.infura.io/v3/'],
+                            nativeCurrency: {
+                                name: 'ETH',
+                                symbol: 'ETH',
+                                decimals: 18
+                            },
+                            blockExplorerUrls: ['https://sepolia.etherscan.io/']
+                        }]
+                    });
+                } else {
+                    throw switchError;
+                }
+            }
+        }
+
+        async function deployContract() {
+            if (!signer) {
+                showStatus('error', 'Please connect your wallet first');
+                return;
+            }
+
+            try {
+                showStatus('info', 'Connecting to contract...');
+
+                // Connect to existing contract
+                contractAddress = '0x4D82dfC59a1fEf9B41DE0130D3A075d27BFe87ab';
+                contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
+
+                document.getElementById('contractAddress').textContent = contractAddress;
+                showStatus('success', `Connected to contract at: ${contractAddress}`);
+
+                // Load initial data
+                await loadContractData();
+
+            } catch (error) {
+                console.error('Error connecting to contract:', error);
+                showStatus('error', `Failed to connect to contract: ${error.message}`);
+            }
+        }
+
+        async function loadContractData() {
+            if (!contract) return;
+
+            try {
+                const totalRecords = await contract.totalRecords();
+                document.getElementById('totalRecords').textContent = totalRecords.toString();
+
+                // Get and display health authority
+                const healthAuthority = await contract.healthAuthority();
+                const authorityInfo = document.createElement('p');
+                authorityInfo.innerHTML = `<strong>Health Authority:</strong> ${healthAuthority}`;
+                const contractInfoDiv = document.querySelector('.contract-info');
+
+                // Remove old authority info if exists
+                const oldAuthorityInfo = contractInfoDiv.querySelector('.authority-info');
+                if (oldAuthorityInfo) {
+                    oldAuthorityInfo.remove();
+                }
+
+                authorityInfo.className = 'authority-info';
+                contractInfoDiv.appendChild(authorityInfo);
+
+                // Check if current user is authorized doctor
+                const isAuthorized = await contract.authorizedDoctors(userAddress);
+                const authStatus = document.createElement('p');
+                authStatus.innerHTML = `<strong>Your Status:</strong> ${isAuthorized ? '✅ Authorized Doctor' : '❌ Not Authorized (cannot record vaccinations)'}`;
+                authStatus.style.color = isAuthorized ? '#28a745' : '#dc3545';
+                authStatus.className = 'auth-status-info';
+
+                // Remove old status if exists
+                const oldAuthStatus = contractInfoDiv.querySelector('.auth-status-info');
+                if (oldAuthStatus) {
+                    oldAuthStatus.remove();
+                }
+
+                contractInfoDiv.appendChild(authStatus);
+            } catch (error) {
+                console.error('Error loading contract data:', error);
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        async function recordVaccination() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first', 'recordStatus');
+                return;
+            }
+
+            try {
+                const patientAddress = document.getElementById('patientAddress').value;
+                const personId = document.getElementById('personId').value;
+                const vaccineType = document.getElementById('vaccineType').value;
+                const vaccineDate = document.getElementById('vaccineDate').value;
+                const doseNumber = document.getElementById('doseNumber').value;
+                const batchNumber = document.getElementById('batchNumber').value;
+
+                if (!patientAddress || !personId || !vaccineType || !vaccineDate || !doseNumber || !batchNumber) {
+                    showStatus('error', 'Please fill in all fields', 'recordStatus');
+                    return;
+                }
+
+                // Validate Ethereum address
+                if (!ethers.utils.isAddress(patientAddress)) {
+                    showStatus('error', 'Invalid patient address. Please enter a valid Ethereum address (0x...)', 'recordStatus');
+                    return;
+                }
+
+                showStatus('info', 'Recording vaccination...', 'recordStatus');
+
+                const vaccineDateTimestamp = Math.floor(new Date(vaccineDate).getTime() / 1000);
+
+                const tx = await contract.recordVaccination(
+                    patientAddress,
+                    personId,
+                    vaccineType,
+                    vaccineDateTimestamp,
+                    doseNumber,
+                    batchNumber
+                );
+
+                await tx.wait();
+
+                showStatus('success', 'Vaccination recorded successfully!', 'recordStatus');
+
+                // Clear form
+                document.getElementById('patientAddress').value = '';
+                document.getElementById('personId').value = '';
+                document.getElementById('vaccineType').value = '';
+                document.getElementById('vaccineDate').value = '';
+                document.getElementById('doseNumber').value = '';
+                document.getElementById('batchNumber').value = '';
+
+                await loadContractData();
+
+            } catch (error) {
+                console.error('Error recording vaccination:', error);
+
+                // Check if it's an authorization error
+                if (error.message.includes('Not an authorized doctor') || error.reason?.includes('Not an authorized doctor')) {
+                    showStatus('error', '❌ Authorization Required: Your wallet is not authorized as a doctor. Please check the contract info above to see the Health Authority address, then ask them to authorize you in the "👨‍⚕️ Doctor Management" tab.', 'recordStatus');
+                } else {
+                    showStatus('error', `Failed to record vaccination: ${error.message}`, 'recordStatus');
+                }
+            }
+        }
+
+        async function loadUserRecords() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first');
+                return;
+            }
+
+            try {
+                const viewAddress = document.getElementById('viewUserAddress').value || userAddress;
+
+                if (!viewAddress) {
+                    showStatus('error', 'Please provide a user address');
+                    return;
+                }
+
+                showStatus('info', 'Loading records...');
+
+                const recordIds = await contract.getUserRecords(viewAddress);
+                const recordsListDiv = document.getElementById('recordsList');
+
+                if (recordIds.length === 0) {
+                    recordsListDiv.innerHTML = '<div class="status info">No records found for this address.</div>';
+                    return;
+                }
+
+                let recordsHtml = '<div class="records-grid">';
+
+                for (let i = 0; i < recordIds.length; i++) {
+                    const recordId = recordIds[i];
+                    const recordInfo = await contract.getRecordInfo(recordId);
+
+                    const vaccineTypes = {
+                        1: 'COVID-19', 2: 'Influenza', 3: 'Hepatitis A', 4: 'Hepatitis B',
+                        5: 'Tetanus', 6: 'Measles', 7: 'Mumps', 8: 'Rubella', 9: 'Polio', 10: 'Other'
+                    };
+
+                    recordsHtml += `
+                        <div class="record-card">
+                            <div class="record-header">
+                                <span class="record-id">Record #${recordId}</span>
+                                <span class="record-status ${recordInfo.isActive ? 'active' : 'inactive'}">
+                                    ${recordInfo.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div class="record-details">
+                                <div class="record-detail">
+                                    <strong>Timestamp:</strong>
+                                    <span>${new Date(recordInfo.timestamp * 1000).toLocaleString()}</span>
+                                </div>
+                                <div class="record-detail">
+                                    <strong>Doctor:</strong>
+                                    <span>${recordInfo.authorizedDoctor}</span>
+                                </div>
+                            </div>
+                            <button class="btn secondary" onclick="viewRecordDetails(${recordId})">
+                                View Details
+                            </button>
+                        </div>
+                    `;
+                }
+
+                recordsHtml += '</div>';
+                recordsListDiv.innerHTML = recordsHtml;
+
+            } catch (error) {
+                console.error('Error loading records:', error);
+                showStatus('error', `Failed to load records: ${error.message}`);
+            }
+        }
+
+        async function viewRecordDetails(recordId) {
+            if (!contract) return;
+
+            try {
+                const hasAccess = await contract.hasAccessPermission(userAddress, recordId);
+
+                if (!hasAccess) {
+                    showStatus('warning', 'You do not have permission to view this record details');
+                    return;
+                }
+
+                // In a real application, you would decrypt the FHE encrypted data here
+                showStatus('info', `Record ${recordId} details would be decrypted and displayed here`);
+
+            } catch (error) {
+                console.error('Error viewing record details:', error);
+                showStatus('error', `Failed to view record details: ${error.message}`);
+            }
+        }
+
+        async function grantAccess() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first', 'accessStatus');
+                return;
+            }
+
+            try {
+                const recordId = document.getElementById('grantRecordId').value;
+                const accessorAddress = document.getElementById('accessorAddress').value;
+                const canView = document.getElementById('canView').checked;
+                const canUpdate = document.getElementById('canUpdate').checked;
+                const duration = document.getElementById('accessDuration').value;
+
+                if (!recordId || !accessorAddress || !duration) {
+                    showStatus('error', 'Please fill in all fields', 'accessStatus');
+                    return;
+                }
+
+                showStatus('info', 'Granting access...', 'accessStatus');
+
+                const tx = await contract.grantAccess(
+                    accessorAddress,
+                    recordId,
+                    canView,
+                    canUpdate,
+                    duration
+                );
+
+                await tx.wait();
+
+                showStatus('success', 'Access granted successfully!', 'accessStatus');
+
+            } catch (error) {
+                console.error('Error granting access:', error);
+                showStatus('error', `Failed to grant access: ${error.message}`, 'accessStatus');
+            }
+        }
+
+        async function revokeAccess() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first', 'accessStatus');
+                return;
+            }
+
+            try {
+                const recordId = document.getElementById('revokeRecordId').value;
+                const accessorAddress = document.getElementById('revokeAccessorAddress').value;
+
+                if (!recordId || !accessorAddress) {
+                    showStatus('error', 'Please fill in all fields', 'accessStatus');
+                    return;
+                }
+
+                showStatus('info', 'Revoking access...', 'accessStatus');
+
+                const tx = await contract.revokeAccess(accessorAddress, recordId);
+                await tx.wait();
+
+                showStatus('success', 'Access revoked successfully!', 'accessStatus');
+
+            } catch (error) {
+                console.error('Error revoking access:', error);
+                showStatus('error', `Failed to revoke access: ${error.message}`, 'accessStatus');
+            }
+        }
+
+        async function checkAccessPermission() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first');
+                return;
+            }
+
+            try {
+                const userAddress = document.getElementById('checkUserAddress').value;
+                const recordId = document.getElementById('checkRecordId').value;
+
+                if (!userAddress || !recordId) {
+                    showStatus('error', 'Please fill in all fields');
+                    return;
+                }
+
+                const permission = await contract.getAccessPermission(userAddress, recordId);
+                const hasAccess = await contract.hasAccessPermission(userAddress, recordId);
+
+                const resultDiv = document.getElementById('permissionResult');
+                resultDiv.innerHTML = `
+                    <div class="permission-card">
+                        <h4>Access Permission for Record #${recordId}</h4>
+                        <div class="permission-details">
+                            <div class="permission-detail">
+                                <strong>Can View</strong><br>
+                                ${permission.canView ? '✅ Yes' : '❌ No'}
+                            </div>
+                            <div class="permission-detail">
+                                <strong>Can Update</strong><br>
+                                ${permission.canUpdate ? '✅ Yes' : '❌ No'}
+                            </div>
+                            <div class="permission-detail">
+                                <strong>Active</strong><br>
+                                ${permission.isActive ? '✅ Yes' : '❌ No'}
+                            </div>
+                            <div class="permission-detail">
+                                <strong>Expires</strong><br>
+                                ${new Date(permission.expiryTime * 1000).toLocaleString()}
+                            </div>
+                            <div class="permission-detail">
+                                <strong>Current Access</strong><br>
+                                ${hasAccess ? '✅ Valid' : '❌ Invalid'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error checking permission:', error);
+                showStatus('error', `Failed to check permission: ${error.message}`);
+            }
+        }
+
+        async function authorizeDoctor() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first', 'doctorStatus');
+                return;
+            }
+
+            try {
+                const doctorAddress = document.getElementById('authorizeDoctorAddress').value;
+
+                if (!doctorAddress) {
+                    showStatus('error', 'Please enter doctor address', 'doctorStatus');
+                    return;
+                }
+
+                showStatus('info', 'Authorizing doctor...', 'doctorStatus');
+
+                const tx = await contract.authorizeDoctor(doctorAddress);
+                await tx.wait();
+
+                showStatus('success', 'Doctor authorized successfully!', 'doctorStatus');
+
+            } catch (error) {
+                console.error('Error authorizing doctor:', error);
+                showStatus('error', `Failed to authorize doctor: ${error.message}`, 'doctorStatus');
+            }
+        }
+
+        async function revokeDoctor() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first', 'doctorStatus');
+                return;
+            }
+
+            try {
+                const doctorAddress = document.getElementById('revokeDoctorAddress').value;
+
+                if (!doctorAddress) {
+                    showStatus('error', 'Please enter doctor address', 'doctorStatus');
+                    return;
+                }
+
+                showStatus('info', 'Revoking doctor authorization...', 'doctorStatus');
+
+                const tx = await contract.revokeDoctor(doctorAddress);
+                await tx.wait();
+
+                showStatus('success', 'Doctor authorization revoked successfully!', 'doctorStatus');
+
+            } catch (error) {
+                console.error('Error revoking doctor:', error);
+                showStatus('error', `Failed to revoke doctor: ${error.message}`, 'doctorStatus');
+            }
+        }
+
+        async function checkDoctorAuthorization() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first');
+                return;
+            }
+
+            try {
+                const doctorAddress = document.getElementById('checkDoctorAddress').value;
+
+                if (!doctorAddress) {
+                    showStatus('error', 'Please enter doctor address');
+                    return;
+                }
+
+                const isAuthorized = await contract.authorizedDoctors(doctorAddress);
+
+                const resultDiv = document.getElementById('doctorCheckResult');
+                resultDiv.innerHTML = `
+                    <div class="status ${isAuthorized ? 'success' : 'warning'}">
+                        Doctor ${doctorAddress} is ${isAuthorized ? 'authorized' : 'not authorized'}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error checking doctor authorization:', error);
+                showStatus('error', `Failed to check authorization: ${error.message}`);
+            }
+        }
+
+        async function loadStatistics() {
+            if (!contract) {
+                showStatus('error', 'Please deploy the contract first');
+                return;
+            }
+
+            try {
+                const stats = await contract.getStatistics();
+                const totalRecords = await contract.totalRecords();
+
+                const statsDiv = document.getElementById('statisticsDisplay');
+                statsDiv.innerHTML = `
+                    <div class="records-grid">
+                        <div class="record-card">
+                            <h4>📊 Total Records</h4>
+                            <div style="font-size: 2rem; color: #667eea; font-weight: bold;">
+                                ${totalRecords.toString()}
+                            </div>
+                        </div>
+                        <div class="record-card">
+                            <h4>✅ Active Records</h4>
+                            <div style="font-size: 2rem; color: #28a745; font-weight: bold;">
+                                ${stats.totalActiveRecords.toString()}
+                            </div>
+                        </div>
+                        <div class="record-card">
+                            <h4>👨‍⚕️ Authorized Doctors</h4>
+                            <div style="font-size: 2rem; color: #764ba2; font-weight: bold;">
+                                ${stats.totalAuthorizedDoctors.toString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                showStatus('error', `Failed to load statistics: ${error.message}`);
+            }
+        }
+
+        function showStatus(type, message, containerId = null) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+
+            const container = containerId ?
+                document.getElementById(containerId) :
+                document.querySelector('.wallet-section');
+
+            // Remove existing status messages in the container
+            const existingStatus = container.querySelectorAll('.status');
+            existingStatus.forEach(status => status.remove());
+
+            container.appendChild(statusDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 5000);
+        }
+
+        // Handle account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (accounts.length === 0) {
+                    location.reload();
+                } else {
+                    userAddress = accounts[0];
+                    document.getElementById('userAddress').textContent = userAddress;
+                }
+            });
+
+            window.ethereum.on('chainChanged', function (chainId) {
+                location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
+
+
+
