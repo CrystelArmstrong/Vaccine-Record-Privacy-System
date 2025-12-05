@@ -1,0 +1,121 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Hardhat files
+cache/
+artifacts/
+typechain-types/
+
+# Test coverage
+coverage/
+coverage.json
+.coverage_cache/
+.coverage_contracts/
+
+# Hardhat local network
+deployments/localhost/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build files
+dist/
+build/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+.nyc_output/
+
+# Typescript
+*.tsbuildinfo
+
+# Gas reports
+gas-report
+
+# Hardhat console history
+.hardhat_console_history
+
+# Solidity compiler output
+*.abi
+*.bin
+
+# Temporary files
+.tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+.directory
+.Trash-*
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Local development
+local/
+*.local
+
+# Vercel (if using)
+.vercel
+
+# Blockchain data (if running local node)
+chain-data/
+
+# Documentation build (if using Sphinx or similar)
+docs/_build/
+docs/.doctrees/
