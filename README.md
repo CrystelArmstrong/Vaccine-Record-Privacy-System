@@ -10,7 +10,7 @@ This project demonstrates a complete FHEVM implementation for managing sensitive
 
 Live Demo : https://vaccine-record-privacy-system.vercel.app/
 
-Video : VaccineRecordPrivacy.mp4 https://streamable.com/tw29dt
+Video : VaccineRecordPrivacy.mp4 https://youtu.be/Kn2HuM9MAF0
 
 ### Key Features
 
